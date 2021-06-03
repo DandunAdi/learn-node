@@ -2,12 +2,12 @@ const express = require("express");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
 const Blog = require("./models/blog");
+require("dotenv").config();
 
 const app = express();
 
 // Mongodb atlas connection
-const dbURI =
-  "mongodb+srv://banana:bananapie@learn-node.xjipg.mongodb.net/learn-node?retryWrites=true&w=majority";
+const dbURI = process.env.MONGODB_BLOGS_URI;
 mongoose
   .connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => app.listen(3000))
@@ -16,6 +16,7 @@ mongoose
 // Setup
 app.set("view engine", "ejs");
 app.use(morgan("dev"));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 // Routing
@@ -39,6 +40,30 @@ app.get("/blogs", (req, res) => {
 
 app.get("/blogs/create", (req, res) => {
   res.render("create", { title: "Create Blog" });
+});
+
+app.post("/blogs", (req, res) => {
+  const blog = new Blog(req.body);
+  blog
+    .save()
+    .then(() => res.redirect("/blogs"))
+    .catch((err) => console.log(err));
+});
+
+app.get("/blogs/:id", (req, res) => {
+  const id = req.params.id;
+  Blog.findById(id)
+    .then((result) =>
+      res.render("details", { title: "Blog Details", blog: result })
+    )
+    .catch((err) => console.log(err));
+});
+
+app.delete("/blogs/:id", (req, res) => {
+  const id = req.params.id;
+  Blog.findByIdAndDelete(id)
+    .then((result) => res.json({ redirect: "/blogs" }))
+    .catch((err) => console.log(err));
 });
 
 // 404
